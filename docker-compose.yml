@@ -1,0 +1,32 @@
+﻿version: "3.9"
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: liparibank
+      POSTGRES_PASSWORD: liparibank_dev_2026
+      POSTGRES_DB: liparibank_digital
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U liparibank"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  api:
+    build: .
+    environment:
+      DATABASE_URL: "postgresql://liparibank:liparibank_dev_2026@postgres:5432/liparibank_digital"
+      NODE_ENV: production
+      JWT_SECRET: "super-secret-production-key-12345"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - api
